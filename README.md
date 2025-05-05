@@ -20,3 +20,5 @@ Script for automatic VPN connection with Cisco Secure Client (2025)
 
 
 After these steps you will be able to automatically connect to desired VPN host.
+
+** Do not use global variables. With every run the system will remove Accessibility permissions and block the script from running.**
