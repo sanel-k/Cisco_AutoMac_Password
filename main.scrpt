@@ -1,0 +1,67 @@
+-- TargetApp name tested on Cisco Secure Client ver. 5.1.2.42
+set targetApp to "Cisco Secure Client"
+
+-- Name of the VPN Connection stored in the xml profile
+set vpnProfileName to "XML Profile Entry Name"
+
+-- Name of the entry in apple keychain 
+			-- If you have password stored in the Password apps, the script will not be able to access it
+			-- You have to create keychain password entry (Tested on Mac OS Sequoia 15.4.1)
+			-- run in terminal > security add-generic-password -a UserName -s "Keychain Entry Name" -w "password" -T /usr/bin/security\n
+set keychainEntryName to "Keychain Entry Name"
+
+-- Check if Cisco Secure Client is running
+set isRunning to false
+tell application "System Events"
+	set isRunning to (exists process targetApp)
+end tell
+
+if isRunning is false then
+	-- Launch Cisco Secure Client
+	tell application targetApp to activate
+	
+	-- Wait for the connection window to appear
+	tell application "System Events"
+		repeat until (exists window 2 of process targetApp)
+			delay 0.25
+		end repeat
+	end tell
+	
+	-- Enter VPN profile name and proceed
+	tell application "System Events"
+		tell process targetApp
+			-- Enter the VPN profile name and press return
+			keystroke vpnProfileName
+			keystroke return
+		end tell
+	end tell
+	
+	-- Wait for password entry window
+	tell application "System Events"
+		repeat until (exists window 3 of process targetApp)
+			delay 0.25
+		end repeat
+	end tell
+	
+	-- Retrieve password from Keychain
+	set vpnPassword to do shell script "/usr/bin/security find-generic-password -wl " & quoted form of keychainEntryName
+	
+	-- Paste password and confirm
+	tell application "System Events"
+		tell process targetApp
+			set the clipboard to vpnPassword
+			delay 0.25
+   		  -- Enter password with bypass for script detection
+			  -- Check settings in the xml profile. If disabled then enable
+			  -- <EnableScripting>true</EnableScripting>
+			keystroke "v" using {command down}
+			delay 0.5
+			-- Optional: try click instead of keystroke return
+			try
+				click button "OK" of window 2
+			on error
+				keystroke return
+			end try
+		end tell
+	end tell
+end if
